@@ -4,6 +4,6 @@ We use open data from paris traffic to find out patterns in daily traffic depend
 We cross reference these trajectories to the traffic of Paris to compute the time wasted in traffic.
 And we finally consider several reorderings to optimize those drives.
 
-## additional sources
+## credits
 - https://opendata.paris.fr
 - https://github.com/astyonax/heartbeat-traffic
