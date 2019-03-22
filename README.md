@@ -5,5 +5,5 @@ We cross reference these trajectories to the traffic of Paris to compute the tim
 And we finally consider several reorderings to optimize those drives.
 
 ## additional sources
-- opendata.paris.fr
+- https://opendata.paris.fr
 - https://github.com/astyonax/heartbeat-traffic
