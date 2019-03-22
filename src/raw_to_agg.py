@@ -1,3 +1,8 @@
+###
+# from opendata
+# sparce csv -> dense hdf
+###
+
 from tqdm import tqdm # _notebook as tqdm
 import numpy as np
 import pandas as pd
