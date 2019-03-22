@@ -1,4 +1,3 @@
-
 from sklearn.cluster import KMeans
 
 # number of clusters

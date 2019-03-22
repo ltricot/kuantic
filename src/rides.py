@@ -31,12 +31,16 @@ def get_rides(kid, df):
     dat = df[df.kuantic_id == kid].sort_values(by='timestamp')
     dat['prev_timestamp'] = df.timestamp.shift(-1)
     dat['diffs'] = dat.timestamp - dat.prev_timestamp
-    dat['markers'] = dat.diffs > pd.Timedelta(minutes=5)
+    dat['markers'] = dat.diffs > pd.Timedelta(minutes=1)
     dat['_gid'] = dat.markers.cumsum()
 
     for col in ['prev_timestamp', 'diffs', 'markers']:
         del dat[col]
     return dat.groupby('_gid')
+
+def get_diffs(df, kid):
+    dat = df[df.kuantic_id == kid].sort_values(by='timestamp')
+    print(dat.timestamp.to_csv())
 
 def get_bounds(rides):
     dat = rides.agg(['first', 'last'])
@@ -79,7 +83,7 @@ def plot_rides(df, kid):
     rides = get_rides(kid, df)
     coords = get_bounds(rides)
     for f1, f2, t1, t2 in coords:
-        plt.plot([f1, t1], [f2, t2])
+        plt.plot([t1, f1], [t2, f2])
     plt.show()
 
 def plot_cluster(df, kid, nc):
@@ -100,7 +104,7 @@ def plot_cluster(df, kid, nc):
     ])
 
     lines = mc.LineCollection(
-        coords.reshape(-1, 2, 2),
+        coords.reshape(-1, 2, 2)[:, :, ::-1],
         colors=colors[clt.labels_],
     )
 
@@ -114,10 +118,25 @@ def plot_cluster(df, kid, nc):
 
 def plot_nice_rides(df, kid, nc):
     rides = get_rides(kid, df)
-    sizes = rides.size()
-    ix = np.random.choice(np.arange(len(sizes)), p=sizes/sizes.sum())
-    ride = rides.iloc[ix]
-    print(ride.to_string())
+    coords = get_bounds(rides)
+
+    clt = KMeans(n_clusters=nc)
+    clt.fit(coords)
+
+    lc = len(set(clt.labels_))
+    colors = np.asarray([  # assume max -n 7 which is optimistic
+        (0, 0, 0, 1), (0.5, 0, 0, 1), (0, 0.5, 0, 1), (0, 0, 0.5, 1),
+        (0.5, 0.5, 0, 1), (0, 0.5, 0.5, 1), (0.5, 0, 0.5, 1),
+    ])
+
+    for i, (k, gb) in enumerate(rides):
+        lat = gb.latitude.values
+        lon = gb.longitude.values
+
+        plt.plot(lon, lat, color=colors[clt.labels_[i]])
+        plt.xlim([2.20, 2.48])
+        plt.ylim([48.81, 48.9])
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -136,6 +155,7 @@ if __name__ == '__main__':
         'rides': plot_rides,
         'cluster': plot_cluster,
         'nice': plot_nice_rides,
+        'diffs': get_diffs,
     }
 
     # eary arg checking
@@ -152,7 +172,7 @@ if __name__ == '__main__':
 
     # explicit call - zen of python
     cargs = [df]
-    if args.what in ['rides', 'cluster', 'nice']:
+    if args.what in ['rides', 'cluster', 'nice', 'diffs']:
         cargs.append(args.kid)
     if args.what in ['cluster', 'nice']:
         cargs.append(args.nc)
