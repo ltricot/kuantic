@@ -1,5 +1,10 @@
 #! /usr/bin/env python
 
+###
+# hdf dense -> datafram serialized in pickle
+# preprocessing and floats to grid
+###
+
 import numpy as np
 import pandas as pd
 
