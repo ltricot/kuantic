@@ -2,6 +2,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
     
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 from scipy.spatial.distance import cdist
 
@@ -49,7 +50,7 @@ def cluscore(coords):
     bestS = -float('inf')
 
     # get best score for all k in 1..15
-    for NC in range(2, 15):
+    for NC in range(2, min(15, len(coords))):
         clt = KMeans(n_clusters=NC)
         clt.fit(coords)
 
@@ -63,10 +64,6 @@ def cluscore(coords):
 
     return bestNC, bestS
 
-def plot(coords):
-    for f1, f2, t1, t2 in coords:
-        plt.plot([f1, t1], [f2, t2])
-
 
 ## scripts
 def get_cluster_scores(df):
@@ -74,11 +71,53 @@ def get_cluster_scores(df):
     print('kuantic_id,n_clusters,score')
     for kid in df.kuantic_id.unique():
         rides = get_rides(kid, df)
+        fmto = get_bounds(rides)
+        k, s = cluscore(fmto)
+        print(f'{kid},{k},{s}')
 
-        if len(rides) > 30:
-            fmto = get_bounds(rides)
-            k, s = cluscore(fmto)
-            print(f'{kid},{k},{s}')
+def plot_rides(df, kid):
+    rides = get_rides(kid, df)
+    coords = get_bounds(rides)
+    for f1, f2, t1, t2 in coords:
+        plt.plot([f1, t1], [f2, t2])
+    plt.show()
+
+def plot_cluster(df, kid, nc):
+    from matplotlib import collections as mc
+
+    coords = get_bounds(get_rides(kid, df))
+    # coords = coords.reshape(-1, 2, 2)
+    # coords.sort(axis=1)
+    # coords = coords.reshape(-1, 4)
+    # tos = coords[:, [2, 3]]
+    clt = KMeans(n_clusters=nc)
+    clt.fit(coords)
+
+    lc = len(set(clt.labels_))
+    colors = np.asarray([  # assume max -n 7 which is optimistic
+        (0, 0, 0, 1), (0.5, 0, 0, 1), (0, 0.5, 0, 1), (0, 0, 0.5, 1),
+        (0.5, 0.5, 0, 1), (0, 0.5, 0.5, 1), (0.5, 0, 0.5, 1),
+    ])
+
+    lines = mc.LineCollection(
+        coords.reshape(-1, 2, 2),
+        colors=colors[clt.labels_],
+    )
+
+    fig, ax = plt.subplots()
+    ax.add_collection(lines)
+    ax.autoscale()
+    ax.margins(0.1)
+
+    # plt.scatter(coords[:, 0], coords[:, 1], c=clt.labels_, cmap='viridis')
+    plt.show()
+
+def plot_nice_rides(df, kid, nc):
+    rides = get_rides(kid, df)
+    sizes = rides.size()
+    ix = np.random.choice(np.arange(len(sizes)), p=sizes/sizes.sum())
+    ride = rides.iloc[ix]
+    print(ride.to_string())
 
 
 if __name__ == '__main__':
@@ -86,12 +125,17 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('car troops analysis')
     parser.add_argument('-i', '--init', type=str, default=None)
+    parser.add_argument('-k', '--kid', type=str, default=None)
+    parser.add_argument('-n', '--nc', type=int, default=2)
     parser.add_argument('what', type=str)
 
     args = parser.parse_args()
 
     scripts = {
         'cluscore': get_cluster_scores,
+        'rides': plot_rides,
+        'cluster': plot_cluster,
+        'nice': plot_nice_rides,
     }
 
     # eary arg checking
@@ -107,4 +151,9 @@ if __name__ == '__main__':
         df = _get_cache()
 
     # explicit call - zen of python
-    scripts[args.what].__call__(df)
+    cargs = [df]
+    if args.what in ['rides', 'cluster', 'nice']:
+        cargs.append(args.kid)
+    if args.what in ['cluster', 'nice']:
+        cargs.append(args.nc)
+    scripts[args.what].__call__(*cargs)

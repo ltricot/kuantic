@@ -28,7 +28,6 @@ DLA = df.lat.max(),df.lat.min()
 from matplotlib.font_manager import FontProperties
 from cartopy.io.img_tiles import OSM,StamenTerrain,GoogleTiles
 from scipy.interpolate import griddata
-from tqdm import tqdm_notebook as tqdm
 font0 = FontProperties()
 font0.set_family('serif')
 font0.set_name('ubuntu')
