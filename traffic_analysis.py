@@ -1,3 +1,8 @@
+###
+# load dataframe and produce images
+###
+
+
 from cartopy import crs
 import pylab as plt
 import pandas as pd
